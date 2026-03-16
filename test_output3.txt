@@ -1,0 +1,24 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.9, pytest-9.0.2, pluggy-1.6.0 -- D:\DevOps\unittest\webapp-crud-unitest\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\DevOps\unittest\webapp-crud-unitest
+plugins: anyio-4.12.1
+collecting ... collected 0 items / 1 error
+
+=================================== ERRORS ====================================
+________________________ ERROR collecting test_main.py ________________________
+ImportError while importing test module 'D:\DevOps\unittest\webapp-crud-unitest\test_main.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Program Files\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test_main.py:3: in <module>
+    from main import app
+main.py:3: in <module>
+    from users.router import router as users_router
+E   ModuleNotFoundError: No module named 'users.router'
+=========================== short test summary info ===========================
+ERROR test_main.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 0.52s ===============================
