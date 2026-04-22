@@ -1,10 +1,9 @@
+# employees/test_employees.py
 import pytest
 from fastapi.testclient import TestClient
 from main import app
 import sqlite3
 import os
-
-from users.test_users import setup_teardown as users_setup_teardown # Make sure the user exists first in case order gets changed, although tests should be independent
 
 client = TestClient(app)
 
@@ -33,13 +32,29 @@ def setup_teardown():
     conn.commit()
     conn.close()
 
-@pytest.fixture(autouse=True)
-def wipe_cookies():
-    client.cookies.clear()
+# Removed wipe_cookies fixture - we want to keep cookies across tests
 
-def test_add_employee_authorized(setup_teardown):
-    client.post("/users/login", data={"email": "test_user@example.com", "password": "testpassword"})
-    response = client.post(
+@pytest.fixture(scope="module")
+def authenticated_client(setup_teardown):
+    """
+    Login once for all tests in this module.
+    The session cookie will be preserved across tests.
+    """
+    # Login once
+    client.post(
+        "/users/login",
+        data={
+            "email": "test_user@example.com",
+            "password": "testpassword"
+        },
+        follow_redirects=False
+    )
+    
+    return client
+
+def test_add_employee_authorized(authenticated_client):
+    # Already logged in via authenticated_client
+    response = authenticated_client.post(
         "/employees/add",
         data={
             "fullname": "Test Employee",
@@ -54,21 +69,21 @@ def test_add_employee_authorized(setup_teardown):
     assert response.status_code == 303
     assert response.headers["location"] == "/employees/index?msg=Employee+added+successfully"
 
-def test_employees_index():
-    client.post("/users/login", data={"email": "test_user@example.com", "password": "testpassword"})
-    response = client.get("/employees/index")
+def test_employees_index(authenticated_client):
+    # Already logged in via authenticated_client
+    response = authenticated_client.get("/employees/index")
     assert response.status_code == 200
     assert "Test Employee" in response.text
 
-def test_api_edit_employee():
-    client.post("/users/login", data={"email": "test_user@example.com", "password": "testpassword"})
+def test_api_edit_employee(authenticated_client):
+    # Already logged in via authenticated_client
     conn = sqlite3.connect("test_app.db")
     cursor = conn.cursor()
     cursor.execute("SELECT emp_id FROM employees WHERE email='test_employee@example.com'")
     emp_id = cursor.fetchone()[0]
     conn.close()
 
-    response = client.post(
+    response = authenticated_client.post(
         f"/employees/api/edit/{emp_id}",
         json={
             "fullname": "Test Employee Updated",
@@ -81,13 +96,13 @@ def test_api_edit_employee():
     )
     assert response.status_code == 200
 
-def test_api_delete_employee():
-    client.post("/users/login", data={"email": "test_user@example.com", "password": "testpassword"})
+def test_api_delete_employee(authenticated_client):
+    # Already logged in via authenticated_client
     conn = sqlite3.connect("test_app.db")
     cursor = conn.cursor()
     cursor.execute("SELECT emp_id FROM employees WHERE email='test_employee@example.com'")
     emp_id = cursor.fetchone()[0]
     conn.close()
 
-    response = client.delete(f"/employees/api/delete/{emp_id}")
+    response = authenticated_client.delete(f"/employees/api/delete/{emp_id}")
     assert response.status_code == 200
